@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const { initializeCronJobs } = require('./utils/cronJobs');
 require('dotenv').config();
 
 const app = express();
@@ -15,7 +16,12 @@ mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('Conectado ao MongoDB:', mongoUri.includes('mongodb.net') ? 'MongoDB Atlas' : 'Local'))
+.then(() => {
+  console.log('Conectado ao MongoDB:', mongoUri.includes('mongodb.net') ? 'MongoDB Atlas' : 'Local');
+  
+  // Inicializar cron jobs após conexão com o banco
+  initializeCronJobs();
+})
 .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
 // Rotas

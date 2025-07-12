@@ -2,7 +2,7 @@ const express = require('express');
 const Challenge = require('../models/Challenge');
 const Player = require('../models/Player');
 const auth = require('../middleware/auth');
-const { canChallenge } = require('../utils/ranking');
+const { canChallenge, applyDeclinePenalty } = require('../utils/ranking');
 const NotificationService = require('../utils/notifications');
 
 const router = express.Router();
@@ -144,10 +144,22 @@ router.put('/:id/respond', auth, async (req, res) => {
     } else if (action === 'decline') {
       challenge.status = 'declined';
       
+      // Aplicar penalidade por recusa (MVP)
+      const challenger = await Player.findById(challenge.challenger);
+      const penaltyResult = await applyDeclinePenalty(req.player, challenger);
+      
       // Decrementar contador de desafios ativos do desafiante
       await Player.findByIdAndUpdate(challenge.challenger, {
         $inc: { activeChallenges: -1 }
       });
+      
+      // Adicionar informações da penalidade ao challenge
+      challenge.declinePenalty = {
+        applied: penaltyResult.penaltyApplied,
+        pointsTransferred: penaltyResult.pointsTransferred,
+        recusasNoMes: penaltyResult.recusasNoMes,
+        message: penaltyResult.message
+      };
     } else {
       return res.status(400).json({ message: 'Ação inválida' });
     }

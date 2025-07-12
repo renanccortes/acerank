@@ -3,7 +3,7 @@ const Match = require('../models/Match');
 const Challenge = require('../models/Challenge');
 const Player = require('../models/Player');
 const auth = require('../middleware/auth');
-const { calculateMatchPoints, updateRankings } = require('../utils/ranking');
+const { calculateMatchPoints, updateRankings, updateProvisionalStatus } = require('../utils/ranking');
 const NotificationService = require('../utils/notifications');
 
 const router = express.Router();
@@ -213,6 +213,10 @@ router.get('/pending-validation', auth, async (req, res) => {
 
 // Função auxiliar para aplicar resultados da partida
 async function applyMatchResults(match) {
+  // Buscar jogadores para verificar status provisional
+  const winner = await Player.findById(match.winner._id);
+  const loser = await Player.findById(match.loser._id);
+  
   // Atualizar pontos dos jogadores
   await Player.findByIdAndUpdate(match.winner._id, {
     $inc: { 
@@ -231,6 +235,16 @@ async function applyMatchResults(match) {
     winStreak: 0,
     lastActivity: new Date()
   });
+  
+  // Atualizar status provisional dos jogadores (MVP)
+  const winnerProvisionalUpdate = await updateProvisionalStatus(winner);
+  const loserProvisionalUpdate = await updateProvisionalStatus(loser);
+  
+  // Adicionar informações sobre mudanças de status provisional ao match
+  match.provisionalUpdates = {
+    winner: winnerProvisionalUpdate,
+    loser: loserProvisionalUpdate
+  };
   
   // Decrementar contador de desafios ativos
   const challenge = await Challenge.findById(match.challenge);

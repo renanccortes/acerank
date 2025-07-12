@@ -85,6 +85,26 @@ const playerSchema = new mongoose.Schema({
     default: 0
   },
   
+  // Sistema de recusas (MVP)
+  recusasMesAtual: {
+    type: Number,
+    default: 0
+  },
+  recusaMesRef: {
+    type: Date,
+    default: Date.now
+  },
+  
+  // Sistema de jogadores provisórios (MVP)
+  provisional: {
+    type: Boolean,
+    default: true
+  },
+  provisionalMatches: {
+    type: Number,
+    default: 0
+  },
+  
   // Outros campos
   activeChallenges: {
     type: Number,
