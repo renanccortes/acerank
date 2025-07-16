@@ -18,7 +18,8 @@ Um sistema completo de ranking de jogadores de tênis desenvolvido com Node.js, 
 
 ### Sistema de Desafios
 - ✅ Criação de desafios entre jogadores
-- ✅ Limite de posições para desafio (5 posições acima, 10 para novatos)
+- ✅ Alcance dinâmico de desafios (5% dos jogadores do nível)
+- ✅ Sistema de penalidade por recusa (-10 pts na 3ª recusa/mês)
 - ✅ Aceitação/recusa de desafios
 - ✅ Prazo de 48h para resposta
 - ✅ Prazo de 7 dias para jogar após aceitar
@@ -136,12 +137,41 @@ Pv = 20 + (Ranking_Perdedor - Ranking_Vencedor) * 2 + 10
 Pd = -10 - (Ranking_Vencedor - Ranking_Perdedor) * 1 + 10
 ```
 
-### Regras de Desafio
-- Jogadores podem desafiar até 5 posições acima
-- Novatos (ranking > 50) podem desafiar até 10 posições acima
+### Regras de Desafio (MVP - Julho 2025)
+- **Alcance Dinâmico**: Jogadores podem desafiar até `max(1, ceil(0.05 * totalJogadoresNoNivel))` posições acima
+- **Penalidade por Recusa**: 2 recusas grátis por mês, a partir da 3ª: -10 pontos (recuser) / +10 pontos (challenger)
+- **Jogadores Provisórios**: Novatos têm multiplicador 1.5x nos pontos das primeiras 3 partidas
 - Máximo de 3 desafios ativos por jogador
 - Prazo de 48h para aceitar/recusar
 - Prazo de 7 dias para jogar após aceitar
+- Reset automático de recusas todo dia 1º do mês
+
+## 🏆 Regras MVP (Julho 2025) - Implementadas
+
+### 1. Alcance Dinâmico de Desafios
+- **Fórmula**: `alcance = max(1, ceil(0.05 * totalJogadoresNoNivel))`
+- **Exemplos**: 
+  - 20 jogadores no nível = 1 posição de alcance
+  - 40 jogadores no nível = 2 posições de alcance
+  - 100 jogadores no nível = 5 posições de alcance
+
+### 2. Sistema de Penalidade por Recusa
+- **Recusas Grátis**: 2 por mês para cada jogador
+- **Penalidade**: A partir da 3ª recusa no mesmo mês:
+  - Jogador que recusa: **-10 pontos**
+  - Jogador que desafiou: **+10 pontos**
+- **Reset**: Automático todo dia 1º às 00:10 (horário de Brasília)
+
+### 3. Jogadores Provisórios (Novatos)
+- **Critério**: Primeiras 3 partidas após cadastro
+- **Multiplicador**: 1.5x nos pontos ganhos/perdidos
+- **Progressão**: Automática após completar 3 partidas
+- **Objetivo**: Acelerar a adaptação de novos jogadores
+
+### 4. Automação e Manutenção
+- **Cron Jobs**: Reset mensal, limpeza de dados, atualização de rankings
+- **Notificações**: Sistema completo para todos os eventos
+- **Monitoramento**: Logs detalhados para auditoria
 
 ## 🎯 Funcionalidades do MVP
 

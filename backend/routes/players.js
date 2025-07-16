@@ -134,11 +134,14 @@ router.get('/available/challenge', auth, async (req, res) => {
     .select('-password -googleId')
     .sort({ level: 1, rankingLevel: 1 });
     
-    // Filtrar jogadores que realmente podem ser desafiados
-    const challengeablePlayers = availablePlayers.filter(player => {
-      const result = canChallenge(currentPlayer, player);
-      return result.canChallenge;
-    });
+    // Filtrar jogadores que realmente podem ser desafiados (async)
+    const challengeablePlayers = [];
+    for (const player of availablePlayers) {
+      const result = await canChallenge(currentPlayer, player);
+      if (result.canChallenge) {
+        challengeablePlayers.push(player);
+      }
+    }
     
     const playersWithDetails = challengeablePlayers.map(player => ({
       ...player.toObject(),

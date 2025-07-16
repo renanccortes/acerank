@@ -148,6 +148,20 @@ router.put('/:id/respond', auth, async (req, res) => {
       const challenger = await Player.findById(challenge.challenger);
       const penaltyResult = await applyDeclinePenalty(req.player, challenger);
       
+      // Enviar notificações de mudança de pontos se penalidade foi aplicada
+      if (penaltyResult.penaltyApplied) {
+        try {
+          await NotificationService.pointsChanged(
+            req.player._id, `-10 pts por recusa`
+          );
+          await NotificationService.pointsChanged(
+            challenger._id, `+10 pts do desafio recusado`
+          );
+        } catch (notificationError) {
+          console.error('Erro ao enviar notificação de pontos:', notificationError);
+        }
+      }
+      
       // Decrementar contador de desafios ativos do desafiante
       await Player.findByIdAndUpdate(challenge.challenger, {
         $inc: { activeChallenges: -1 }
