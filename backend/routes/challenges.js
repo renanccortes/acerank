@@ -21,7 +21,7 @@ router.post('/', auth, async (req, res) => {
     }
     
     // Verificar se pode desafiar
-    const challengeCheck = canChallenge(challenger, challenged);
+    const challengeCheck = await canChallenge(challenger, challenged);
     if (!challengeCheck.canChallenge) {
       return res.status(400).json({ message: challengeCheck.reason });
     }
