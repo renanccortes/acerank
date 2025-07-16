@@ -191,7 +191,7 @@ router.get('/can-challenge/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Jogador não encontrado' });
     }
     
-    const result = canChallenge(req.player, targetPlayer);
+    const result = await canChallenge(req.player, targetPlayer);
     
     res.json(result);
   } catch (error) {
