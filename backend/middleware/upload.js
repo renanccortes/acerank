@@ -18,31 +18,36 @@ createDirectories();
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let uploadPath = 'uploads/';
-    
+
     if (req.route.path.includes('profile')) {
       uploadPath += 'profiles/';
     } else if (req.route.path.includes('match')) {
       uploadPath += 'matches/';
     }
-    
+
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
     // Gerar nome único para o arquivo
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const extension = path.extname(file.originalname);
     cb(null, file.fieldname + '-' + uniqueSuffix + extension);
-  }
+  },
 });
 
 // Filtro de arquivos (apenas imagens)
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-  
+
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Tipo de arquivo não permitido. Apenas JPEG, PNG e GIF são aceitos.'), false);
+    cb(
+      new Error(
+        'Tipo de arquivo não permitido. Apenas JPEG, PNG e GIF são aceitos.'
+      ),
+      false
+    );
   }
 };
 
@@ -52,8 +57,7 @@ const upload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
   },
-  fileFilter: fileFilter
+  fileFilter: fileFilter,
 });
 
 module.exports = upload;
-

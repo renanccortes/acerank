@@ -9,20 +9,20 @@ router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
-    
+
     const notifications = await Notification.getUserNotifications(
       req.user.id,
       parseInt(limit),
       parseInt(skip)
     );
-    
+
     const unreadCount = await Notification.getUnreadCount(req.user.id);
-    
+
     res.json({
       notifications,
       unreadCount,
       currentPage: parseInt(page),
-      totalPages: Math.ceil(notifications.length / limit)
+      totalPages: Math.ceil(notifications.length / limit),
     });
   } catch (error) {
     console.error('Erro ao buscar notificações:', error);
@@ -46,13 +46,13 @@ router.put('/:id/read', auth, async (req, res) => {
   try {
     const notification = await Notification.findOne({
       _id: req.params.id,
-      recipient: req.user.id
+      recipient: req.user.id,
     });
-    
+
     if (!notification) {
       return res.status(404).json({ message: 'Notificação não encontrada' });
     }
-    
+
     await notification.markAsRead();
     res.json({ message: 'Notificação marcada como lida' });
   } catch (error) {
@@ -77,13 +77,13 @@ router.delete('/:id', auth, async (req, res) => {
   try {
     const notification = await Notification.findOneAndDelete({
       _id: req.params.id,
-      recipient: req.user.id
+      recipient: req.user.id,
     });
-    
+
     if (!notification) {
       return res.status(404).json({ message: 'Notificação não encontrada' });
     }
-    
+
     res.json({ message: 'Notificação deletada com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar notificação:', error);
@@ -96,9 +96,9 @@ router.delete('/read', auth, async (req, res) => {
   try {
     await Notification.deleteMany({
       recipient: req.user.id,
-      read: true
+      read: true,
     });
-    
+
     res.json({ message: 'Notificações lidas deletadas com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar notificações lidas:', error);
@@ -107,4 +107,3 @@ router.delete('/read', auth, async (req, res) => {
 });
 
 module.exports = router;
-
