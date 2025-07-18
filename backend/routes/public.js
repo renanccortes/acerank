@@ -34,8 +34,10 @@ router.get('/ranking', async (req, res) => {
       wins: player.wins,
       losses: player.losses,
       winRate: player.getWinRate(),
-      profilePhoto: player.profilePhoto ? `/api/uploads/${player.profilePhoto}` : null,
-      joinedAt: player.joinedAt
+      profilePhoto: player.profilePhoto
+        ? `/api/uploads/${player.profilePhoto}`
+        : null,
+      joinedAt: player.joinedAt,
     }));
 
     res.json({
@@ -45,10 +47,9 @@ router.get('/ranking', async (req, res) => {
         totalPages,
         totalPlayers,
         hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
+        hasPrev: page > 1,
+      },
     });
-
   } catch (error) {
     console.error('Erro ao buscar ranking público:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
@@ -70,8 +71,8 @@ router.get('/feed', async (req, res) => {
         select: 'score matchDate resultPhoto',
         populate: {
           path: 'winner loser',
-          select: 'name'
-        }
+          select: 'name',
+        },
       })
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -89,23 +90,37 @@ router.get('/feed', async (req, res) => {
       players: activity.players.map(player => ({
         id: player._id,
         name: player.name,
-        profilePhoto: player.profilePhoto ? `/api/uploads/${player.profilePhoto}` : null
+        profilePhoto: player.profilePhoto
+          ? `/api/uploads/${player.profilePhoto}`
+          : null,
       })),
-      createdBy: activity.createdBy ? {
-        id: activity.createdBy._id,
-        name: activity.createdBy.name,
-        profilePhoto: activity.createdBy.profilePhoto ? `/api/uploads/${activity.createdBy.profilePhoto}` : null
-      } : null,
-      relatedMatch: activity.relatedMatch ? {
-        id: activity.relatedMatch._id,
-        score: activity.relatedMatch.score,
-        matchDate: activity.relatedMatch.matchDate,
-        resultPhoto: activity.relatedMatch.resultPhoto ? `/api/uploads/${activity.relatedMatch.resultPhoto}` : null,
-        winner: activity.relatedMatch.winner ? activity.relatedMatch.winner.name : null,
-        loser: activity.relatedMatch.loser ? activity.relatedMatch.loser.name : null
-      } : null,
+      createdBy: activity.createdBy
+        ? {
+            id: activity.createdBy._id,
+            name: activity.createdBy.name,
+            profilePhoto: activity.createdBy.profilePhoto
+              ? `/api/uploads/${activity.createdBy.profilePhoto}`
+              : null,
+          }
+        : null,
+      relatedMatch: activity.relatedMatch
+        ? {
+            id: activity.relatedMatch._id,
+            score: activity.relatedMatch.score,
+            matchDate: activity.relatedMatch.matchDate,
+            resultPhoto: activity.relatedMatch.resultPhoto
+              ? `/api/uploads/${activity.relatedMatch.resultPhoto}`
+              : null,
+            winner: activity.relatedMatch.winner
+              ? activity.relatedMatch.winner.name
+              : null,
+            loser: activity.relatedMatch.loser
+              ? activity.relatedMatch.loser.name
+              : null,
+          }
+        : null,
       metadata: activity.metadata,
-      createdAt: activity.createdAt
+      createdAt: activity.createdAt,
     }));
 
     res.json({
@@ -115,10 +130,9 @@ router.get('/feed', async (req, res) => {
         totalPages,
         totalActivities,
         hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
+        hasPrev: page > 1,
+      },
     });
-
   } catch (error) {
     console.error('Erro ao buscar feed público:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
@@ -130,7 +144,7 @@ router.get('/stats', async (req, res) => {
   try {
     const totalPlayers = await Player.countDocuments({ isActive: true });
     const totalMatches = await Match.countDocuments({ status: 'validated' });
-    
+
     // Jogador com mais vitórias
     const topWinner = await Player.findOne({ isActive: true })
       .select('name wins profilePhoto')
@@ -144,18 +158,23 @@ router.get('/stats', async (req, res) => {
     res.json({
       totalPlayers,
       totalMatches,
-      topWinner: topWinner ? {
-        name: topWinner.name,
-        wins: topWinner.wins,
-        profilePhoto: topWinner.profilePhoto ? `/api/uploads/${topWinner.profilePhoto}` : null
-      } : null,
-      lastActivity: lastActivity ? {
-        title: lastActivity.title,
-        description: lastActivity.description,
-        createdAt: lastActivity.createdAt
-      } : null
+      topWinner: topWinner
+        ? {
+            name: topWinner.name,
+            wins: topWinner.wins,
+            profilePhoto: topWinner.profilePhoto
+              ? `/api/uploads/${topWinner.profilePhoto}`
+              : null,
+          }
+        : null,
+      lastActivity: lastActivity
+        ? {
+            title: lastActivity.title,
+            description: lastActivity.description,
+            createdAt: lastActivity.createdAt,
+          }
+        : null,
     });
-
   } catch (error) {
     console.error('Erro ao buscar estatísticas públicas:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
@@ -163,4 +182,3 @@ router.get('/stats', async (req, res) => {
 });
 
 module.exports = router;
-

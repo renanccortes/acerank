@@ -9,34 +9,34 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 20, search } = req.query;
-    
+
     let query = { isActive: true };
-    
+
     if (search) {
       query.name = { $regex: search, $options: 'i' };
     }
-    
+
     const players = await Player.find(query)
       .select('-password -googleId')
       .sort({ ranking: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
-    
+
     const total = await Player.countDocuments(query);
-    
+
     // Adicionar informações extras para cada jogador
     const playersWithDetails = players.map(player => ({
       ...player.toObject(),
       age: player.getAge(),
       winRate: player.getWinRate(),
-      progress: player.getProgress()
+      progress: player.getProgress(),
     }));
-    
+
     res.json({
       players: playersWithDetails,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
-      total
+      total,
     });
   } catch (error) {
     console.error('Erro ao buscar jogadores:', error);
@@ -47,15 +47,17 @@ router.get('/', async (req, res) => {
 // Buscar jogador por ID
 router.get('/:id', async (req, res) => {
   try {
-    const player = await Player.findById(req.params.id).select('-password -googleId');
-    
+    const player = await Player.findById(req.params.id).select(
+      '-password -googleId'
+    );
+
     if (!player) {
       return res.status(404).json({ message: 'Jogador não encontrado' });
     }
-    
+
     // Buscar estatísticas detalhadas
     const stats = await getPlayerStats(player._id);
-    
+
     res.json({
       ...player.toObject(),
       age: player.getAge(),
@@ -63,7 +65,7 @@ router.get('/:id', async (req, res) => {
       progress: player.getProgress(),
       promotionRequirements: player.getPromotionRequirements(),
       canPromote: player.canPromoteToNextLevel(),
-      stats
+      stats,
     });
   } catch (error) {
     console.error('Erro ao buscar jogador:', error);
@@ -75,31 +77,29 @@ router.get('/:id', async (req, res) => {
 router.put('/profile', auth, async (req, res) => {
   try {
     const { name, phone, gender, region, birthDate } = req.body;
-    
+
     const updateData = {
-      lastActivity: new Date()
+      lastActivity: new Date(),
     };
-    
+
     if (name) updateData.name = name;
     if (phone !== undefined) updateData.phone = phone;
     if (gender) updateData.gender = gender;
     if (region !== undefined) updateData.region = region;
     if (birthDate) updateData.birthDate = new Date(birthDate);
-    
-    const player = await Player.findByIdAndUpdate(
-      req.player._id,
-      updateData,
-      { new: true }
-    ).select('-password -googleId');
-    
+
+    const player = await Player.findByIdAndUpdate(req.player._id, updateData, {
+      new: true,
+    }).select('-password -googleId');
+
     res.json({
       message: 'Perfil atualizado com sucesso',
       player: {
         ...player.toObject(),
         age: player.getAge(),
         winRate: player.getWinRate(),
-        progress: player.getProgress()
-      }
+        progress: player.getProgress(),
+      },
     });
   } catch (error) {
     console.error('Erro ao atualizar perfil:', error);
@@ -111,29 +111,32 @@ router.put('/profile', auth, async (req, res) => {
 router.get('/available/challenge', auth, async (req, res) => {
   try {
     const currentPlayer = req.player;
-    
+
     // Buscar jogadores do mesmo nível ou 1 nível acima
     const levelOrder = {
-      'iniciante': 1,
-      'intermediario': 2,
-      'avancado': 3,
-      'profissional': 4
+      iniciante: 1,
+      intermediario: 2,
+      avancado: 3,
+      profissional: 4,
     };
-    
+
     const currentLevelOrder = levelOrder[currentPlayer.level] || 1;
     const targetLevels = Object.keys(levelOrder).filter(level => {
       const levelOrderValue = levelOrder[level];
-      return levelOrderValue >= currentLevelOrder && levelOrderValue <= currentLevelOrder + 1;
+      return (
+        levelOrderValue >= currentLevelOrder &&
+        levelOrderValue <= currentLevelOrder + 1
+      );
     });
-    
+
     const availablePlayers = await Player.find({
       isActive: true,
       _id: { $ne: currentPlayer._id },
-      level: { $in: targetLevels }
+      level: { $in: targetLevels },
     })
-    .select('-password -googleId')
-    .sort({ level: 1, rankingLevel: 1 });
-    
+      .select('-password -googleId')
+      .sort({ level: 1, rankingLevel: 1 });
+
     // Filtrar jogadores que realmente podem ser desafiados (async)
     const challengeablePlayers = [];
     for (const player of availablePlayers) {
@@ -142,16 +145,16 @@ router.get('/available/challenge', auth, async (req, res) => {
         challengeablePlayers.push(player);
       }
     }
-    
+
     const playersWithDetails = challengeablePlayers.map(player => ({
       ...player.toObject(),
       age: player.getAge(),
-      winRate: player.getWinRate()
+      winRate: player.getWinRate(),
     }));
-    
-    res.json({ 
+
+    res.json({
       availablePlayers: playersWithDetails,
-      total: playersWithDetails.length
+      total: playersWithDetails.length,
     });
   } catch (error) {
     console.error('Erro ao buscar jogadores disponíveis:', error);
@@ -164,8 +167,8 @@ router.get('/me/stats', auth, async (req, res) => {
   try {
     const stats = await getPlayerStats(req.player._id);
     const player = req.player;
-    
-    res.json({ 
+
+    res.json({
       stats,
       player: {
         ...player.toObject(),
@@ -173,8 +176,8 @@ router.get('/me/stats', auth, async (req, res) => {
         winRate: player.getWinRate(),
         progress: player.getProgress(),
         promotionRequirements: player.getPromotionRequirements(),
-        canPromote: player.canPromoteToNextLevel()
-      }
+        canPromote: player.canPromoteToNextLevel(),
+      },
     });
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error);
@@ -186,13 +189,13 @@ router.get('/me/stats', auth, async (req, res) => {
 router.get('/can-challenge/:id', auth, async (req, res) => {
   try {
     const targetPlayer = await Player.findById(req.params.id);
-    
+
     if (!targetPlayer) {
       return res.status(404).json({ message: 'Jogador não encontrado' });
     }
-    
+
     const result = await canChallenge(req.player, targetPlayer);
-    
+
     res.json(result);
   } catch (error) {
     console.error('Erro ao verificar desafio:', error);
@@ -201,4 +204,3 @@ router.get('/can-challenge/:id', auth, async (req, res) => {
 });
 
 module.exports = router;
-

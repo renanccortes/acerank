@@ -26,7 +26,7 @@ router.post('/register', async (req, res) => {
       name,
       email,
       password,
-      phone
+      phone,
     });
 
     await player.save();
@@ -35,11 +35,9 @@ router.post('/register', async (req, res) => {
     await updateRankings();
 
     // Gerar token
-    const token = jwt.sign(
-      { id: player._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = jwt.sign({ id: player._id }, process.env.JWT_SECRET, {
+      expiresIn: '7d',
+    });
 
     res.status(201).json({
       message: 'Jogador registrado com sucesso',
@@ -50,8 +48,8 @@ router.post('/register', async (req, res) => {
         email: player.email,
         phone: player.phone,
         points: player.points,
-        ranking: player.ranking
-      }
+        ranking: player.ranking,
+      },
     });
   } catch (error) {
     console.error('Erro no registro:', error);
@@ -81,11 +79,9 @@ router.post('/login', async (req, res) => {
     await player.save();
 
     // Gerar token
-    const token = jwt.sign(
-      { id: player._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = jwt.sign({ id: player._id }, process.env.JWT_SECRET, {
+      expiresIn: '7d',
+    });
 
     res.json({
       message: 'Login realizado com sucesso',
@@ -98,8 +94,8 @@ router.post('/login', async (req, res) => {
         points: player.points,
         ranking: player.ranking,
         wins: player.wins,
-        losses: player.losses
-      }
+        losses: player.losses,
+      },
     });
   } catch (error) {
     console.error('Erro no login:', error);
@@ -119,8 +115,8 @@ router.get('/verify', auth, async (req, res) => {
         points: req.player.points,
         ranking: req.player.ranking,
         wins: req.player.wins,
-        losses: req.player.losses
-      }
+        losses: req.player.losses,
+      },
     });
   } catch (error) {
     console.error('Erro na verificação:', error);
@@ -140,7 +136,7 @@ router.post('/google', async (req, res) => {
     // Verificar token do Google
     const ticket = await googleClient.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
@@ -150,10 +146,7 @@ router.post('/google', async (req, res) => {
 
     // Buscar jogador existente por Google ID ou email
     let player = await Player.findOne({
-      $or: [
-        { googleId: googleId },
-        { email: email }
-      ]
+      $or: [{ googleId: googleId }, { email: email }],
     });
 
     if (player) {
@@ -162,7 +155,7 @@ router.post('/google', async (req, res) => {
         player.googleId = googleId;
         await player.save();
       }
-      
+
       // Atualizar última atividade
       player.lastActivity = new Date();
       await player.save();
@@ -176,17 +169,15 @@ router.post('/google', async (req, res) => {
       });
 
       await player.save();
-      
+
       // Atualizar rankings após adicionar novo jogador
       await updateRankings();
     }
 
     // Gerar token JWT
-    const jwtToken = jwt.sign(
-      { id: player._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const jwtToken = jwt.sign({ id: player._id }, process.env.JWT_SECRET, {
+      expiresIn: '7d',
+    });
 
     res.json({
       message: 'Login com Google realizado com sucesso',
@@ -207,8 +198,8 @@ router.post('/google', async (req, res) => {
         wins: player.wins,
         losses: player.losses,
         winRate: player.getWinRate(),
-        progress: player.getProgress()
-      }
+        progress: player.getProgress(),
+      },
     });
   } catch (error) {
     console.error('Erro no login Google:', error);
@@ -217,4 +208,3 @@ router.post('/google', async (req, res) => {
 });
 
 module.exports = router;
-
