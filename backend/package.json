@@ -7,6 +7,11 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:integration": "jest tests/integration.test.js",
+    "test:performance": "jest tests/performance.test.js --timeout=30000",
+    "test:edge": "jest tests/edge-cases.test.js",
+    "test:mvp": "jest tests/mvp-rules-simple.test.js",
+    "test:all": "jest --runInBand --timeout=30000",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
