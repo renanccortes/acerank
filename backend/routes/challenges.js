@@ -12,6 +12,28 @@ const {
 
 const router = express.Router();
 
+// Listar todos os desafios do usuário (rota básica)
+router.get('/', auth, async (req, res) => {
+  try {
+    const playerId = req.player._id;
+    
+    const challenges = await Challenge.find({
+      $or: [
+        { challenger: playerId },
+        { challenged: playerId }
+      ]
+    })
+    .populate('challenger', 'name level')
+    .populate('challenged', 'name level')
+    .sort({ createdAt: -1 });
+
+    res.json(challenges);
+  } catch (error) {
+    console.error('Erro ao listar desafios:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
 // Criar novo desafio
 router.post(
   '/',

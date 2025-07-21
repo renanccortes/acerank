@@ -1,9 +1,15 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const Player = require('../models/Player');
 const auth = require('../middleware/auth');
 const { updateRankings } = require('../utils/ranking');
+const {
+  registerSchema,
+  loginSchema,
+  validateSchema,
+} = require('../schemas/authSchemas');
 
 const router = express.Router();
 
@@ -11,9 +17,9 @@ const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Registrar novo jogador
-router.post('/register', async (req, res) => {
+router.post('/register', validateSchema(registerSchema), async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, level } = req.validatedData;
 
     // Verificar se o email já existe
     const existingPlayer = await Player.findOne({ email });
@@ -21,12 +27,20 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Email já cadastrado' });
     }
 
+    // Hash da senha
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Criar novo jogador
     const player = new Player({
       name,
       email,
-      password,
+      password: hashedPassword,
       phone,
+      level: level || 'INIC',
+      provisional: true,
+      provisionalMatches: 0,
+      recusasMesAtual: 0,
+      recusaMesRef: new Date(),
     });
 
     await player.save();
@@ -35,7 +49,7 @@ router.post('/register', async (req, res) => {
     await updateRankings();
 
     // Gerar token
-    const token = jwt.sign({ id: player._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ playerId: player._id, id: player._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
 
@@ -43,12 +57,16 @@ router.post('/register', async (req, res) => {
       message: 'Jogador registrado com sucesso',
       token,
       player: {
+        _id: player._id,
         id: player._id,
         name: player.name,
         email: player.email,
         phone: player.phone,
+        level: player.level,
         points: player.points,
         ranking: player.ranking,
+        provisional: player.provisional,
+        provisionalMatches: player.provisionalMatches,
       },
     });
   } catch (error) {
@@ -58,9 +76,9 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', validateSchema(loginSchema), async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.validatedData;
 
     // Buscar jogador
     const player = await Player.findOne({ email });
@@ -79,7 +97,7 @@ router.post('/login', async (req, res) => {
     await player.save();
 
     // Gerar token
-    const token = jwt.sign({ id: player._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ playerId: player._id, id: player._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
 
@@ -175,7 +193,7 @@ router.post('/google', async (req, res) => {
     }
 
     // Gerar token JWT
-    const jwtToken = jwt.sign({ id: player._id }, process.env.JWT_SECRET, {
+    const jwtToken = jwt.sign({ playerId: player._id, id: player._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
 

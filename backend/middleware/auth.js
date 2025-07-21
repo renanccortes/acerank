@@ -10,7 +10,8 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const player = await Player.findById(decoded.id).select('-password');
+    const playerId = decoded.playerId || decoded.id;
+    const player = await Player.findById(playerId).select('-password');
 
     if (!player) {
       return res.status(401).json({ message: 'Token inválido' });

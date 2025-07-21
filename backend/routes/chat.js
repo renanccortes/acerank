@@ -7,6 +7,23 @@ const NotificationService = require('../utils/notifications');
 
 const router = express.Router();
 
+// Rota genérica para compatibilidade com testes (redireciona para challenge)
+router.get('/:challengeId', auth, async (req, res) => {
+  try {
+    const { challengeId } = req.params;
+    
+    // Buscar mensagens do chat para o desafio
+    const messages = await Chat.find({ challengeId })
+      .populate('sender', 'name')
+      .sort({ createdAt: 1 });
+
+    res.json(messages);
+  } catch (error) {
+    console.error('Erro ao buscar mensagens:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
 // Criar ou obter chat para um desafio
 router.get('/challenge/:challengeId', auth, async (req, res) => {
   try {

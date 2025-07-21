@@ -1,5 +1,6 @@
 // Setup global para todos os testes
 const mongoose = require('mongoose');
+const { connectTestDB, disconnectTestDB, clearTestDB } = require('./test-db');
 
 // Configurar timeout global
 jest.setTimeout(30000);
@@ -7,33 +8,36 @@ jest.setTimeout(30000);
 // Configurar variáveis de ambiente para testes
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test_secret_key_for_testing_only';
-process.env.MONGODB_URI = 'mongodb://localhost:27017/acerank_test';
 
 // Suprimir logs durante testes
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
-beforeAll(() => {
+beforeAll(async () => {
+  // Suprimir logs
   console.log = jest.fn();
   console.error = jest.fn();
+  
+  // Conectar ao banco de teste em memória
+  await connectTestDB();
 });
 
-afterAll(() => {
+afterAll(async () => {
+  // Restaurar logs
   console.log = originalConsoleLog;
   console.error = originalConsoleError;
+  
+  // Desconectar banco de teste
+  await disconnectTestDB();
+});
+
+beforeEach(async () => {
+  // Limpar banco antes de cada teste
+  await clearTestDB();
 });
 
 // Configurar mongoose para testes
 mongoose.set('strictQuery', false);
-
-// Função helper para limpar banco de dados
-global.cleanDatabase = async () => {
-  const collections = mongoose.connection.collections;
-  for (const key in collections) {
-    const collection = collections[key];
-    await collection.deleteMany({});
-  }
-};
 
 // Função helper para criar jogador de teste
 global.createTestPlayer = async (overrides = {}) => {
