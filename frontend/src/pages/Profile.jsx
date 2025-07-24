@@ -131,9 +131,9 @@ const Profile = () => {
               <div className="flex justify-center">
                 <PhotoUpload
                   type="profile"
-                  currentPhoto={player?.profilePhoto}
+                  currentPhoto={player?.profileImage}
                   onPhotoUploaded={(photoUrl) => {
-                    updatePlayer({ ...player, profilePhoto: photoUrl });
+                    updatePlayer({ ...player, profileImage: photoUrl });
                   }}
                 />
               </div>

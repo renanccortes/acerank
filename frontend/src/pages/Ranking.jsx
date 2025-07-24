@@ -1,25 +1,62 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { playersAPI } from '../lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { playersAPI, challengesAPI } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Search, TrendingUp, TrendingDown, Minus, Crown, Medal, Award } from 'lucide-react';
+import { Trophy, Search, TrendingUp, TrendingDown, Minus, Crown, Medal, Award, Swords, User } from 'lucide-react';
+import ChallengeConfirmDialog from '../components/ChallengeConfirmDialog';
+import { toast } from 'sonner';
 
 const Ranking = () => {
   const { player } = useAuth();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [challengeDialog, setChallengeDialog] = useState({
+    isOpen: false,
+    challengedId: null,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['players', page, search],
     queryFn: () => playersAPI.getAll({ page, limit: 20, search }),
   });
 
+  const createChallengeMutation = useMutation({
+    mutationFn: challengesAPI.create,
+    onSuccess: () => {
+      toast.success('Desafio enviado com sucesso!');
+      queryClient.invalidateQueries(['challenges']);
+      setChallengeDialog({ isOpen: false, challengedId: null });
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Erro ao enviar desafio');
+    },
+  });
+
   const players = data?.data?.players || [];
   const totalPages = data?.data?.totalPages || 1;
+
+  const handleChallengeClick = (challengedId) => {
+    setChallengeDialog({
+      isOpen: true,
+      challengedId,
+    });
+  };
+
+  const handleConfirmChallenge = async (challengeData) => {
+    await createChallengeMutation.mutateAsync({
+      challengedId: challengeData.challengedId,
+      message: challengeData.message,
+    });
+  };
+
+  const closeChallengeDialog = () => {
+    setChallengeDialog({ isOpen: false, challengedId: null });
+  };
 
   const getRankingIcon = (ranking) => {
     if (ranking === 1) return <Crown className="h-5 w-5 text-yellow-500" />;
@@ -116,6 +153,21 @@ const Ranking = () => {
                         </Badge>
                       </div>
 
+                      {/* Profile Photo */}
+                      <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200">
+                        {rankPlayer.profileImage ? (
+                          <img
+                            src={rankPlayer.profileImage}
+                            alt={rankPlayer.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <User className="w-6 h-6 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+
                       {/* Player Info */}
                       <div>
                         <h3 className={`font-semibold ${
@@ -138,19 +190,35 @@ const Ranking = () => {
                       </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="flex items-center space-x-6 text-sm">
-                      {/* Win Streak */}
-                      {rankPlayer.winStreak > 0 && (
-                        <div className="flex items-center space-x-1 text-green-600">
-                          <TrendingUp className="h-4 w-4" />
-                          <span>{rankPlayer.winStreak}</span>
-                        </div>
+                    {/* Actions and Stats */}
+                    <div className="flex items-center space-x-4">
+                      {/* Challenge Button */}
+                      {!isCurrentPlayer && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleChallengeClick(rankPlayer._id)}
+                          className="bg-orange-600 hover:bg-orange-700 text-white"
+                          disabled={createChallengeMutation.isPending}
+                        >
+                          <Swords className="w-4 h-4 mr-1" />
+                          Desafiar
+                        </Button>
                       )}
 
-                      {/* Last Activity */}
-                      <div className="text-gray-500">
-                        {new Date(rankPlayer.lastActivity).toLocaleDateString()}
+                      {/* Stats */}
+                      <div className="flex items-center space-x-6 text-sm">
+                        {/* Win Streak */}
+                        {rankPlayer.winStreak > 0 && (
+                          <div className="flex items-center space-x-1 text-green-600">
+                            <TrendingUp className="h-4 w-4" />
+                            <span>{rankPlayer.winStreak}</span>
+                          </div>
+                        )}
+
+                        {/* Last Activity */}
+                        <div className="text-gray-500">
+                          {new Date(rankPlayer.lastActivity).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -215,6 +283,14 @@ const Ranking = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Challenge Confirmation Dialog */}
+      <ChallengeConfirmDialog
+        isOpen={challengeDialog.isOpen}
+        onClose={closeChallengeDialog}
+        challengedId={challengeDialog.challengedId}
+        onConfirm={handleConfirmChallenge}
+      />
     </div>
   );
 };

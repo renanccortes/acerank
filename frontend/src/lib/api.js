@@ -83,6 +83,8 @@ export const challengesAPI = {
   
   getById: (id) => apiRequest(`/challenges/${id}`),
   
+  getPreview: (challengedId) => apiRequest(`/challenges/preview/${challengedId}`),
+  
   respond: (id, action) => apiRequest(`/challenges/${id}/respond`, {
     method: 'PUT',
     body: JSON.stringify({ action }),
@@ -142,7 +144,7 @@ export const chatAPI = {
 export const uploadAPI = {
   uploadProfilePhoto: async (file) => {
     const formData = new FormData();
-    formData.append('profilePhoto', file);
+    formData.append('profileImage', file);
     
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_BASE_URL}/upload/profile`, {

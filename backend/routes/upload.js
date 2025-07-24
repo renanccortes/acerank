@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middleware/upload');
+const { upload, processProfileImage, deleteOldProfileImage } = require('../middleware/upload');
 const auth = require('../middleware/auth');
 const Player = require('../models/Player');
-const Match = require('../models/Match');
 const Activity = require('../models/Activity');
 const path = require('path');
 const fs = require('fs');
@@ -12,21 +11,22 @@ const fs = require('fs');
 router.post(
   '/profile',
   auth,
-  upload.single('profilePhoto'),
+  upload,
+  processProfileImage,
+  deleteOldProfileImage,
   async (req, res) => {
     try {
-      if (!req.file) {
+      if (!req.processedFile) {
         return res.status(400).json({ message: 'Nenhum arquivo foi enviado' });
       }
 
-      const player = await Player.findById(req.player.id);
+      const player = await Player.findById(req.player._id);
       if (!player) {
         return res.status(404).json({ message: 'Jogador não encontrado' });
       }
 
       // Atualizar caminho da foto de perfil
-      const photoPath = `/uploads/${req.file.filename}`;
-      player.profilePhoto = photoPath;
+      player.profileImage = req.processedFile.url;
       await player.save();
 
       // Criar atividade
@@ -40,9 +40,14 @@ router.post(
 
       res.json({
         success: true,
+        message: 'Foto de perfil atualizada com sucesso',
         data: {
-          photoUrl: photoPath,
-          player: player,
+          profileImage: req.processedFile.url,
+          player: {
+            _id: player._id,
+            name: player.name,
+            profileImage: req.processedFile.url,
+          },
         },
       });
     } catch (error) {
@@ -51,6 +56,43 @@ router.post(
     }
   }
 );
+
+// Servir arquivos de upload de perfil
+router.get('/profiles/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, '..', 'uploads', 'profiles', filename);
+
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({ message: 'Arquivo não encontrado' });
+  }
+});
+
+// Remover foto de perfil
+router.delete('/profile', auth, async (req, res) => {
+  try {
+    const player = await Player.findById(req.player._id);
+    if (!player) {
+      return res.status(404).json({ message: 'Jogador não encontrado' });
+    }
+
+    if (player.profileImage) {
+      const photoPath = path.join(__dirname, '..', player.profileImage);
+      if (fs.existsSync(photoPath)) {
+        fs.unlinkSync(photoPath);
+      }
+
+      player.profileImage = null;
+      await player.save();
+    }
+
+    res.json({ message: 'Foto de perfil removida com sucesso' });
+  } catch (error) {
+    console.error('Erro ao remover foto de perfil:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
 
 // Upload de foto de resultado de partida
 router.post(

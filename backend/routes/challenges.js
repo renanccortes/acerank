@@ -3,6 +3,7 @@ const Challenge = require('../models/Challenge');
 const Player = require('../models/Player');
 const auth = require('../middleware/auth');
 const { canChallenge, applyDeclinePenalty } = require('../utils/ranking');
+const { calculateChallengePoints } = require('../utils/pointsCalculator');
 const NotificationService = require('../utils/notifications');
 const {
   createChallengeSchema,
@@ -30,6 +31,59 @@ router.get('/', auth, async (req, res) => {
     res.json(challenges);
   } catch (error) {
     console.error('Erro ao listar desafios:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Obter preview de desafio com cálculo de pontos
+router.get('/preview/:challengedId', auth, async (req, res) => {
+  try {
+    const { challengedId } = req.params;
+    const challenger = req.player;
+
+    // Buscar jogador desafiado
+    const challenged = await Player.findById(challengedId).select(
+      'name level points profileImage provisional provisionalMatches'
+    );
+
+    if (!challenged) {
+      return res.status(404).json({ message: 'Jogador não encontrado' });
+    }
+
+    // Verificar se pode desafiar
+    const canChallengeResult = await canChallenge(challenger, challenged);
+    if (!canChallengeResult.canChallenge) {
+      return res.status(400).json({ 
+        message: canChallengeResult.reason,
+        canChallenge: false 
+      });
+    }
+
+    // Calcular pontos do desafio
+    const pointsCalculation = calculateChallengePoints(challenger, challenged);
+
+    res.json({
+      canChallenge: true,
+      challenger: {
+        _id: challenger._id,
+        name: challenger.name,
+        level: challenger.level,
+        points: challenger.points,
+        profileImage: challenger.profileImage,
+        provisional: challenger.provisional,
+      },
+      challenged: {
+        _id: challenged._id,
+        name: challenged.name,
+        level: challenged.level,
+        points: challenged.points,
+        profileImage: challenged.profileImage,
+        provisional: challenged.provisional,
+      },
+      pointsCalculation,
+    });
+  } catch (error) {
+    console.error('Erro ao obter preview do desafio:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
   }
 });

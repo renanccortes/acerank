@@ -42,6 +42,11 @@ const playerSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    profileImage: {
+      type: String,
+      default: null,
+      trim: true,
+    },
 
     // Sistema de pontos e níveis
     points: {
