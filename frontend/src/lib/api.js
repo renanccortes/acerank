@@ -1,5 +1,5 @@
 // Configuração da API usando fetch nativo
-const API_BASE_URL = 'https://58hpi8cl1e9x.manus.space/api';
+const API_BASE_URL = 'https://5000-iiukw5dlw67vki78v4tyi-c3bf800c.manusvm.computer/api';
 
 // Função auxiliar para fazer requisições
 const apiRequest = async (endpoint, options = {}) => {

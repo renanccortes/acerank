@@ -1,11 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const { upload, processProfileImage, deleteOldProfileImage } = require('../middleware/upload');
 const auth = require('../middleware/auth');
 const Player = require('../models/Player');
+const Match = require('../models/Match');
 const Activity = require('../models/Activity');
 const path = require('path');
 const fs = require('fs');
+
+// Configuração separada para upload de fotos de partida
+const matchUpload = multer({
+  dest: 'uploads/matches/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens são permitidas'), false);
+    }
+  }
+});
 
 // Upload de foto de perfil
 router.post(
@@ -98,7 +113,7 @@ router.delete('/profile', auth, async (req, res) => {
 router.post(
   '/match/:matchId',
   auth,
-  upload.single('resultPhoto'),
+  matchUpload.single('resultPhoto'),
   async (req, res) => {
     try {
       if (!req.file) {
