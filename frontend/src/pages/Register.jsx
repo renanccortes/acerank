@@ -13,7 +13,8 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    phone: ''
+    phone: '',
+    level: 'INIC',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -50,9 +51,10 @@ const Register = () => {
       name: formData.name,
       email: formData.email,
       password: formData.password,
-      phone: formData.phone
+      phone: formData.phone,
+      level: formData.level
     });
-    
+    console.log(result);
     if (result.success) {
       navigate('/dashboard');
     } else {
@@ -124,6 +126,22 @@ const Register = () => {
                     className="pl-10"
                     placeholder="seu@email.com"
                     value={formData.email}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="level">Level</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="level"
+                    name="level"
+                    type="level"
+                    required
+                    className="pl-10" 
+                    value={formData.level}
                     onChange={handleChange}
                   />
                 </div>

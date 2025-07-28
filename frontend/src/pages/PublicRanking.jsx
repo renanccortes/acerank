@@ -17,7 +17,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import ptBR from 'date-fns/locale/pt-BR';
 
 const PublicRanking = () => {
   const [currentPage, setCurrentPage] = useState(1);

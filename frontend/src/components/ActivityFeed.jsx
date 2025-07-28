@@ -14,7 +14,7 @@ import {
   Target
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import ptBR from 'date-fns/locale/pt-BR';
 
 const ActivityFeed = ({ limit = 10, showTitle = true, className = '' }) => {
   const { data: feedData, isLoading, error } = useQuery({

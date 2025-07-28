@@ -17,8 +17,8 @@ const registerSchema = z.object({
     .min(6, 'Senha deve ter pelo menos 6 caracteres')
     .max(100, 'Senha não pode ter mais de 100 caracteres'),
   level: z
-    .enum(['INIC', 'INT', 'AV', 'PRO'], {
-      errorMap: () => ({ message: 'Nível deve ser INIC, INT, AV ou PRO' }),
+    .enum(['iniciante', 'intermediario', 'avancado', 'profissional'], {
+      errorMap: () => ({ message: 'Nível deve ser iniciante, intermediario, avancado ou profissional' }),
     }),
   phone: z
     .string()
@@ -74,6 +74,7 @@ const validateSchema = schema => {
       req.validatedData = validatedData;
       next();
     } catch (error) {
+      console.log(error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           message: 'Dados inválidos',
